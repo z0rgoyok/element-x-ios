@@ -35,3 +35,16 @@ Push требует отдельного APNs шлюза для нашего Bun
 
 Состояния выпуска фиксируются отдельно: исходники, тесты, архив, загрузка,
 обработка Apple и доступность сборки в TestFlight.
+
+## Закреплённый SDK и архив
+
+Swift package `z0rgoyok/matrix-rust-components-swift`, версия
+`26.10.21`, собирается из нашего Rust SDK
+`7f90f583ce044af09f141d30b2037d91d99c942e`. Квитанция `tich-source.json`
+в release связывает исходники и checksum бинарного XCFramework.
+
+Workflow `Tich Connect archive` запускается на Xcode 27 после merge.
+Он принимает уникальный номер сборки, создаёт unsigned iPhone archive и
+сохраняет исходный commit, версию Xcode и SHA256. Для TestFlight этот архив
+нужно подписать профилями трёх bundle ID, экспортировать и загрузить в Apple.
+Неподписанный архив не является готовым выпуском TestFlight.
