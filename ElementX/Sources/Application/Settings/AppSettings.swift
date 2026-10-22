@@ -118,19 +118,19 @@ final nonisolated class AppSettings: @unchecked Sendable {
     ///
     /// Account provider is the friendly term for the server name. It should not contain an `https` prefix and should
     /// match the last part of the user ID. For example `example.com` and not `https://matrix.example.com`.
-    private(set) var accountProviders: [AccountProvider] = [.managed(serverName: "matrix.org", baseURL: "https://matrix-client.matrix.org")]
+    private(set) var accountProviders: [AccountProvider] = [.managed(serverName: "connect.tich.app", baseURL: "https://connect.tich.app")]
     /// Whether or not the user is allowed to manually enter their own account provider or must select from one of `defaultAccountProviders`.
-    private(set) var allowOtherAccountProviders = true
+    private(set) var allowOtherAccountProviders = false
     /// Whether the components surrounding the app brand/logo should be hidden or not
     private(set) var hideBrandChrome = false
     
     /// The task identifier used for background app refresh. Also used in main target's the Info.plist
-    let backgroundAppRefreshTaskIdentifier = "io.element.elementx.background.refresh"
+    let backgroundAppRefreshTaskIdentifier = "app.tich.connect.background.refresh"
     /// The task identifier used for the search index backfill. Also used in main target's the Info.plist
-    let searchBackfillTaskIdentifier = "io.element.elementx.background.search-backfill"
+    let searchBackfillTaskIdentifier = "app.tich.connect.background.search-backfill"
     
     /// A URL where users can go read more about the app.
-    private(set) var websiteURL: URL = "https://element.io"
+    private(set) var websiteURL: URL = "https://connect.tich.app"
     /// A URL that contains the app's logo that may be used when showing content in a web view.
     private(set) var logoURL: URL = "https://element.io/mobile-icon.png"
     /// A URL that contains that app's copyright notice.
@@ -151,9 +151,9 @@ final nonisolated class AppSettings: @unchecked Sendable {
     private(set) var historySharingDetailsURL: URL = "https://element.io/en/help#e2ee-history-sharing"
     
     /// Any domains that Element web may be hosted on - used for handling links.
-    private(set) var elementWebHosts = ["app.element.io", "staging.element.io", "develop.element.io"]
+    private(set) var elementWebHosts = ["connect.tich.app"]
     /// The domain that account provisioning links will be hosted on - used for handling the links.
-    private(set) var accountProvisioningHost = "mobile.element.io"
+    private(set) var accountProvisioningHost = "connect.tich.app"
     /// The App Store URL for Element Pro, shown to the user when a homeserver requires that app.
     /// **Note:** This property isn't overridable as it in unexpected for forks to come across the error (or to even have a "Pro" app).
     let elementProAppStoreURL: URL = "https://apps.apple.com/app/element-pro-for-work/id6502951615"
@@ -210,7 +210,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
     /// Whether or not the Create Account button is shown on the start screen.
     ///
     /// **Note:** Setting this to false doesn't prevent someone from creating an account when the selected homeserver's MAS allows registration.
-    let showCreateAccountButton = true
+    let showCreateAccountButton = false
     
     // MARK: - Notifications
     
@@ -222,7 +222,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
         #endif
     }
     
-    private(set) var pushGatewayBaseURL: URL = "https://matrix.org"
+    private(set) var pushGatewayBaseURL: URL = "https://connect-origin.tich.app"
     var pushGatewayNotifyEndpoint: URL {
         pushGatewayBaseURL.appending(path: "_matrix/push/v1/notify")
     }
@@ -256,7 +256,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
     let bugReportSentryURL: URL? = Secrets.sentryDSN.map { URL(string: $0)! } // swiftlint:disable:this force_unwrapping
     let bugReportSentryRustURL: URL? = Secrets.sentryRustDSN.map { URL(string: $0)! } // swiftlint:disable:this force_unwrapping
     /// The name allocated by the bug report server
-    private(set) var bugReportApplicationID = "element-x-ios"
+    private(set) var bugReportApplicationID = "tich-connect-ios"
     
     // MARK: - Content scanner
     
