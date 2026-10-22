@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         # Skip if not successful and in forks
-        if: ${{ success() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ success() && github.repository == 'element-hq/element-x-ios' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: coverage
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload test results to Codecov
         # Skip if cancelled and in forks
-        if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ !cancelled() && github.repository == 'element-hq/element-x-ios' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         continue-on-error: true
         with:
