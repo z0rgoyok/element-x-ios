@@ -12,6 +12,7 @@ struct AppSettingsTests {
     @Test
     func defaultAccountProvider() {
         let appSettings = AppSettings.volatile()
+        appSettings.override(allowOtherAccountProviders: true)
         #expect(appSettings.defaultAccountProvider == appSettings.accountProviders[0])
         
         appSettings.previousServers = ["example.com"]
@@ -20,11 +21,20 @@ struct AppSettingsTests {
         appSettings.override(allowOtherAccountProviders: false)
         #expect(appSettings.defaultAccountProvider == appSettings.accountProviders[0])
     }
+    
+    @Test
+    func tichAccountProviderRemainsPinned() {
+        let appSettings = AppSettings.volatile()
+        appSettings.previousServers = ["example.com"]
+        #expect(appSettings.defaultAccountProvider == .managed(serverName: "connect.tich.app", baseURL: "https://connect.tich.app"))
+        #expect(!appSettings.allowOtherAccountProviders)
+        #expect(!appSettings.showCreateAccountButton)
+    }
 }
 
 // MARK: - Helpers
 
-private extension AppSettings {
+extension AppSettings {
     func override(allowOtherAccountProviders: Bool) {
         override(accountProviders: accountProviders,
                  allowOtherAccountProviders: allowOtherAccountProviders,
