@@ -1,0 +1,58 @@
+name: Tich Connect archive
+on:
+  pull_request:
+    branches: [tich/main]
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Unique TestFlight build number
+        required: true
+        default: '1'
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      TICH_BUILD_NUMBER: ${{ inputs.build_number || '1' }}
+      GIT_LFS_SKIP_SMUDGE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Setup Xcode and project
+        run: |
+          case "$TICH_BUILD_NUMBER" in ''|*[!0-9]*) exit 1 ;; esac
+          source ci_scripts/ci_common.sh
+          setup_github_actions_environment
+          xcodegen
+      - name: Archive for iPhone
+        run: |
+          xcodebuild -project ElementX.xcodeproj -scheme ElementX \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/TichConnect.xcarchive -derivedDataPath build/DerivedData \
+            -skipPackagePluginValidation -jobs 4 ARCHS=arm64 \
+            CURRENT_PROJECT_VERSION="$TICH_BUILD_NUMBER" CODE_SIGNING_ALLOWED=NO archive
+      - name: Record source and package unsigned archive
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          receipt = {'app_sha': os.environ['GITHUB_SHA'], 'build': os.environ['TICH_BUILD_NUMBER'],
+                     'state': 'unsigned archive; not uploaded to TestFlight',
+                     'sdk_package': '26.10.21',
+                     'sdk_source': '7f90f583ce044af09f141d30b2037d91d99c942e',
+                     'xcode': subprocess.check_output(['xcodebuild', '-version'], text=True).strip()}
+          pathlib.Path('build/source.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+          ditto -c -k --keepParent build/TichConnect.xcarchive build/TichConnect.xcarchive.zip
+          shasum -a 256 build/TichConnect.xcarchive.zip > build/archive.sha256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tich-connect-unsigned-archive
+          path: |
+            build/TichConnect.xcarchive.zip
+            build/source.json
+            build/archive.sha256
+          retention-days: 7
+          if-no-files-found: error
