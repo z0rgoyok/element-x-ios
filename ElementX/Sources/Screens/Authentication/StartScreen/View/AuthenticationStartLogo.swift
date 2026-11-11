@@ -42,6 +42,8 @@ struct AuthenticationStartLogo: View {
                                                           isOnGradient: isOnGradient))
         } else {
             appLogoImage
+                .resizable()
+                .frame(width: 110, height: 110)
                 .modifier(AuthenticationBrandLogoModifier(scale: 1,
                                                           hideBrandChrome: hideBrandChrome,
                                                           isOnGradient: isOnGradient))

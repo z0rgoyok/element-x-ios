@@ -124,8 +124,8 @@ class OnboardingFlowCoordinator: FlowCoordinatorProtocol {
     // MARK: - Private
     
     private var requiresVerification: Bool {
-        // We want to make sure onboarding finishes but also every time the user becomes unverified (e.g. account reset)
-        !userSettings.account.hasRunIdentityConfirmationOnboarding || userSession.sessionSecurityStatePublisher.value.verificationState == .unverified
+        // Tich Connect does not require device verification before the user can start messaging.
+        false
     }
     
     private var requiresAppLockSetup: Bool {
