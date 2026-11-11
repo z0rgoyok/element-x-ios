@@ -34,6 +34,18 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Restore build caches
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            build/DerivedData/SourcePackages
+            build/DerivedData/CompilationCache.noindex
+            ~/Library/Developer/Xcode/CompilationCache.noindex
+            ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+          key: tich-archive-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            tich-archive-${{ runner.os }}-
+
       - name: Setup Xcode and project
         run: |
           case "$TICH_BUILD_NUMBER" in ''|*[!0-9]*) exit 1 ;; esac
@@ -80,7 +92,13 @@ jobs:
             -exportPath build/export -exportOptionsPlist build/ExportOptions.plist
       - name: Verify signed application
         run: |
-          APP_PATH="$(find build/export -type d -name '*.app' -print -quit)"
+          set -euo pipefail
+          IPA_PATH="$(find build/export -maxdepth 2 -type f -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
+          VERIFY_DIR="$(mktemp -d "$RUNNER_TEMP/tich-ipa.XXXXXX")"
+          trap 'rm -rf "$VERIFY_DIR"' EXIT
+          ditto -x -k "$IPA_PATH" "$VERIFY_DIR"
+          APP_PATH="$(find "$VERIFY_DIR/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)"
           test -n "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           for target in "$APP_PATH" "$APP_PATH/PlugIns/NSE.appex" "$APP_PATH/PlugIns/ShareExtension.appex"; do
@@ -115,7 +133,7 @@ jobs:
           pathlib.Path('build/source.json').write_text(json.dumps(receipt, indent=2) + '\n')
           PY
       - name: Upload to TestFlight
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_to_testflight }}
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.upload_to_testflight }}
         run: |
           IPA_PATH="$(find build/export -type f -name '*.ipa' -print -quit)"
           test -n "$IPA_PATH"
@@ -123,6 +141,17 @@ jobs:
             --apiKey "$TICH_APP_STORE_CONNECT_KEY_ID" \
             --apiIssuer "$TICH_APP_STORE_CONNECT_ISSUER_ID" \
             --output-format json | tee build/upload.json
+      - name: Save build caches
+        if: ${{ always() }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            build/DerivedData/SourcePackages
+            build/DerivedData/CompilationCache.noindex
+            ~/Library/Developer/Xcode/CompilationCache.noindex
+            ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+          key: tich-archive-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+
       - name: Package release artifacts
         if: ${{ always() }}
         run: |
@@ -141,6 +170,7 @@ jobs:
           fi
           cleanup_tich_signing
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() }}
         with:
           name: tich-connect-signed-release
           path: |

@@ -49,7 +49,8 @@ Swift package `z0rgoyok/matrix-rust-components-swift`, версия
 в release связывает исходники и checksum бинарного XCFramework.
 
 Workflow `Tich Connect archive` запускается на Xcode 27, импортирует
-distribution identity, создаёт подписанный archive и App Store IPA. Xcode
+distribution identity, создаёт подписанный archive и App Store IPA. SwiftPM и
+Xcode Compilation Cache восстанавливаются между запусками. Xcode
 автоматически обновляет профили через App Store Connect API. Проверка требует
 production APNs и App Group для приложения, NSE и ShareExtension.
 
