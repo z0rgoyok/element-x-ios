@@ -40,9 +40,9 @@ jobs:
             build/DerivedData/CompilationCache.noindex
             ~/Library/Developer/Xcode/CompilationCache.noindex
             ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
-          key: tich-archive-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          key: tich-archive-v2-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
-            tich-archive-${{ runner.os }}-
+            tich-archive-v2-${{ runner.os }}-
 
       - name: Setup Xcode and project
         run: |
@@ -145,7 +145,7 @@ jobs:
             build/DerivedData/CompilationCache.noindex
             ~/Library/Developer/Xcode/CompilationCache.noindex
             ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
-          key: tich-archive-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          key: tich-archive-v2-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
 
       - name: Package release artifacts
         if: ${{ always() }}
