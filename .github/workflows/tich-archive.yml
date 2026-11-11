@@ -54,18 +54,13 @@ jobs:
           xcodegen
       - name: Archive and export for App Store
         run: |
-          TICH_AUTH_KEY_PATH="$RUNNER_TEMP/AuthKey_${TICH_APP_STORE_CONNECT_KEY_ID}.p8"
-          test -s "$TICH_AUTH_KEY_PATH"
           xcodebuild -project ElementX.xcodeproj -scheme ElementX \
             -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/TichConnect.xcarchive -derivedDataPath build/DerivedData \
             -skipPackagePluginValidation -jobs 4 ARCHS=arm64 \
-            CURRENT_PROJECT_VERSION="$TICH_BUILD_NUMBER" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="$TICH_BUILD_NUMBER" CODE_SIGN_STYLE=Manual \
             COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_KEEP_CAS_DIRECTORY=YES \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$TICH_AUTH_KEY_PATH" \
-            -authenticationKeyID "$TICH_APP_STORE_CONNECT_KEY_ID" \
-            -authenticationKeyIssuerID "$TICH_APP_STORE_CONNECT_ISSUER_ID" archive
+            archive
           cat > build/ExportOptions.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
