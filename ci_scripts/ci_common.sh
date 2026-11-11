@@ -28,8 +28,8 @@ install_pinned_swiftformat() {
         --output "${SWIFTFORMAT_DIR}/swiftformat.zip"
     printf '%s  %s\n' "$SWIFTFORMAT_SHA256" "${SWIFTFORMAT_DIR}/swiftformat.zip" | shasum -a 256 -c -
     unzip -q "${SWIFTFORMAT_DIR}/swiftformat.zip" -d "$SWIFTFORMAT_DIR"
-    sudo install -m 0755 "${SWIFTFORMAT_DIR}/swiftformat" /usr/local/bin/swiftformat
-    /usr/local/bin/swiftformat --version | grep -Fx "$SWIFTFORMAT_VERSION"
+    sudo install -m 0755 "${SWIFTFORMAT_DIR}/swiftformat" /opt/homebrew/bin/swiftformat
+    /opt/homebrew/bin/swiftformat --version | grep -Fx "$SWIFTFORMAT_VERSION"
     rm "${SWIFTFORMAT_DIR}/swiftformat" "${SWIFTFORMAT_DIR}/swiftformat.zip"
     rmdir "$SWIFTFORMAT_DIR"
 }
