@@ -1,7 +1,5 @@
 name: Tich Connect archive
 on:
-  pull_request:
-    branches: [tich/main]
   workflow_dispatch:
     inputs:
       build_number:
