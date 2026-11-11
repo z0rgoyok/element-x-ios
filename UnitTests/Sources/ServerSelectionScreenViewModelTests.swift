@@ -317,11 +317,11 @@ struct ServerSelectionScreenViewModelTests {
         let textField = UITextField()
         context.send(viewAction: .updateTextField(textField))
         
-        // When the user types a prefix that matches an account provider.
-        let typedSoFar = "ma"
-        let nextCharacter = "t"
+        // When the user types a prefix that matches the pinned Tich Connect provider.
+        let typedSoFar = "co"
+        let nextCharacter = "n"
         let typed = typedSoFar + nextCharacter
-        let expectedAddress = "matrix.org"
+        let expectedAddress = "connect.tich.app"
         textField.text = typedSoFar
         let deferred = deferFulfillment(context.observe(\.serverNameOrBaseURL)) { $0 == expectedAddress }
         _ = textField.delegate?.textField?(textField, shouldChangeCharactersIn: NSRange(location: typedSoFar.count, length: 0), replacementString: nextCharacter)

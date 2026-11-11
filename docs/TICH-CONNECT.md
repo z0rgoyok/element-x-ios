@@ -11,7 +11,7 @@ Apple находятся в его SOPS и Keychain. Ключи не помещ�
 ## Сборка
 
 1. `swift run tools setup-project` устанавливает инструменты и генерирует проект.
-2. `swift Tools/Scripts/tich-brand.swift` воспроизводит собственную иконку и логотип.
+2. Иконка Tich Connect хранится в `ElementX/Resources/AppIcon.icon`; CI проверяет её точный SHA256.
 3. После изменения `app.yml` или `target.yml` выполнить `xcodegen`.
 4. Проверить unit tests и собрать архив схемы `ElementX`, конфигурация `Release`.
 5. Выпускать только после подключения проверенной сборки нашего Rust SDK,
