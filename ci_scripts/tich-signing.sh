@@ -26,10 +26,30 @@ setup_tich_signing() {
   mkdir -p "$HOME/.private_keys"
   cp "$AUTH_KEY_PATH" "$HOME/.private_keys/AuthKey_${TICH_APP_STORE_CONNECT_KEY_ID}.p8"
   chmod 0600 "$HOME/.private_keys/AuthKey_${TICH_APP_STORE_CONNECT_KEY_ID}.p8"
-  mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+  PROFILE_DIRECTORY="$HOME/Library/MobileDevice/Provisioning Profiles"
+  PROFILE_LIST="$RUNNER_TEMP/tich-installed-profiles.txt"
+  mkdir -p "$PROFILE_DIRECTORY"
+  : > "$PROFILE_LIST"
+
+  install_tich_profile "$TICH_PROFILE_MAIN_BASE64" "$PROFILE_DIRECTORY" "$PROFILE_LIST"
+  install_tich_profile "$TICH_PROFILE_NSE_BASE64" "$PROFILE_DIRECTORY" "$PROFILE_LIST"
+  install_tich_profile "$TICH_PROFILE_SHARE_BASE64" "$PROFILE_DIRECTORY" "$PROFILE_LIST"
 
   security find-identity -v -p codesigning "$KEYCHAIN_PATH"
   export TICH_AUTH_KEY_PATH="$AUTH_KEY_PATH"
+}
+
+install_tich_profile() {
+  PROFILE_BASE64="$1"
+  PROFILE_DIRECTORY="$2"
+  PROFILE_LIST="$3"
+  PROFILE_TEMP="$(mktemp "$RUNNER_TEMP/tich-profile.XXXXXX")"
+  printf '%s' "$PROFILE_BASE64" | base64 --decode > "$PROFILE_TEMP"
+  PROFILE_UUID="$(security cms -D -i "$PROFILE_TEMP" | plutil -extract UUID raw -o - -)"
+  PROFILE_TARGET="$PROFILE_DIRECTORY/$PROFILE_UUID.mobileprovision"
+  mv "$PROFILE_TEMP" "$PROFILE_TARGET"
+  chmod 0600 "$PROFILE_TARGET"
+  printf '%s\n' "$PROFILE_TARGET" >> "$PROFILE_LIST"
 }
 
 cleanup_tich_signing() {
@@ -37,4 +57,10 @@ cleanup_tich_signing() {
   rm -f "$RUNNER_TEMP/tich-connect-distribution.p12" \
     "$RUNNER_TEMP/AuthKey_${TICH_APP_STORE_CONNECT_KEY_ID}.p8" \
     "$HOME/.private_keys/AuthKey_${TICH_APP_STORE_CONNECT_KEY_ID}.p8"
+  if test -f "$RUNNER_TEMP/tich-installed-profiles.txt"; then
+    while IFS= read -r profile; do
+      rm -f "$profile"
+    done < "$RUNNER_TEMP/tich-installed-profiles.txt"
+    rm "$RUNNER_TEMP/tich-installed-profiles.txt"
+  fi
 }
