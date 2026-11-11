@@ -30,6 +30,7 @@ struct AppSettingsTests {
         #expect(!appSettings.allowOtherAccountProviders)
         #expect(!appSettings.showCreateAccountButton)
         #expect(appSettings.nativeCallEnabled)
+        #expect(appSettings.pushGatewayNotifyEndpoint.absoluteString == "http://sygnal:5000/_matrix/push/v1/notify")
     }
 }
 

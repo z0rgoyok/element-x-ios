@@ -222,7 +222,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
         #endif
     }
     
-    private(set) var pushGatewayBaseURL: URL = "https://connect-origin.tich.app"
+    private(set) var pushGatewayBaseURL: URL = "http://sygnal:5000"
     var pushGatewayNotifyEndpoint: URL {
         pushGatewayBaseURL.appending(path: "_matrix/push/v1/notify")
     }
