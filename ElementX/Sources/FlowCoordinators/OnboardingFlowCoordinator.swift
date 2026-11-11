@@ -124,8 +124,11 @@ class OnboardingFlowCoordinator: FlowCoordinatorProtocol {
     // MARK: - Private
     
     private var requiresVerification: Bool {
-        // Tich Connect does not require device verification before the user can start messaging.
-        false
+        let configurationValue = Bundle.main.object(forInfoDictionaryKey: "requiresDeviceVerificationOnboarding") as? NSString
+        let isRequiredByBuild = configurationValue?.boolValue ?? false
+        return isRequiredByBuild
+            && (!userSettings.account.hasRunIdentityConfirmationOnboarding
+                || userSession.sessionSecurityStatePublisher.value.verificationState == .unverified)
     }
     
     private var requiresAppLockSetup: Bool {

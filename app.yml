@@ -6,6 +6,7 @@ settings:
   ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "colors/accent-color"
   DEVELOPMENT_TEAM: N6M79K762Y
   IS_NIGHTLY_BUILD: false
+  REQUIRES_DEVICE_VERIFICATION_ONBOARDING: false
 
   # Optional configuration to load accounts from Element Classic.
   CLASSIC_APP_GROUP_IDENTIFIER: group.im.vector
