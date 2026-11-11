@@ -29,6 +29,7 @@ struct AppSettingsTests {
         #expect(appSettings.defaultAccountProvider == .managed(serverName: "connect.tich.app", baseURL: "https://connect.tich.app"))
         #expect(!appSettings.allowOtherAccountProviders)
         #expect(!appSettings.showCreateAccountButton)
+        #expect(appSettings.nativeCallEnabled)
     }
 }
 

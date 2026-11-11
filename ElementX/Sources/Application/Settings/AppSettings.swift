@@ -411,7 +411,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
     var developerOptionsEnabled: Bool
     
     /// Runs calls through the native matrix-rust-rtc stack instead of the Element Call web view.
-    @UserPreference(defaultValue: false)
+    @UserPreference(defaultValue: true)
     var nativeCallEnabled: Bool
     
     @UserPreference(defaultValue: false)
