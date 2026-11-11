@@ -81,7 +81,6 @@ targets:
         classicAppDeepLinkURL: $(CLASSIC_APP_DEEP_LINK_URL)
         productionAppName: $(PRODUCTION_APP_NAME)
         isNightlyBuild: $(IS_NIGHTLY_BUILD)
-        requiresDeviceVerificationOnboarding: $(REQUIRES_DEVICE_VERIFICATION_ONBOARDING)
         ITSAppUsesNonExemptEncryption: false
         NSUserActivityTypes: [
           INSendMessageIntent,

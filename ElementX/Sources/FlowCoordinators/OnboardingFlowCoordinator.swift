@@ -124,11 +124,8 @@ class OnboardingFlowCoordinator: FlowCoordinatorProtocol {
     // MARK: - Private
     
     private var requiresVerification: Bool {
-        let configurationValue = Bundle.main.object(forInfoDictionaryKey: "requiresDeviceVerificationOnboarding") as? NSString
-        let isRequiredByBuild = configurationValue?.boolValue ?? false
-        return isRequiredByBuild
-            && (!userSettings.account.hasRunIdentityConfirmationOnboarding
-                || userSession.sessionSecurityStatePublisher.value.verificationState == .unverified)
+        // We want to make sure onboarding finishes but also every time the user becomes unverified (e.g. account reset)
+        !userSettings.account.hasRunIdentityConfirmationOnboarding || userSession.sessionSecurityStatePublisher.value.verificationState == .unverified
     }
     
     private var requiresAppLockSetup: Bool {
