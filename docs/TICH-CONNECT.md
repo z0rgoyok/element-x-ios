@@ -12,9 +12,10 @@ Apple находятся в его SOPS и Keychain. Ключи не помещ�
 
 1. `swift run tools setup-project` устанавливает инструменты и генерирует проект.
 2. Иконка Tich Connect хранится в `ElementX/Resources/AppIcon.icon`; CI проверяет её точный SHA256.
-3. После изменения `app.yml` или `target.yml` выполнить `xcodegen`.
-4. Проверить unit tests и собрать архив схемы `ElementX`, конфигурация `Release`.
-5. Выпускать только после подключения проверенной сборки нашего Rust SDK,
+3. SwiftFormat закреплён на `0.64.0` и проверяется по SHA256.
+4. После изменения `app.yml` или `target.yml` выполнить `xcodegen`.
+5. Проверить unit tests и собрать архив схемы `ElementX`, конфигурация `Release`.
+6. Выпускать только после подключения проверенной сборки нашего Rust SDK,
    проверки входа, E2EE сообщения, файла и push на физическом устройстве.
 
 Bundle ID `app.tich.connect`; App Group `group.app.tich.connect`.
@@ -43,8 +44,11 @@ Swift package `z0rgoyok/matrix-rust-components-swift`, версия
 `7f90f583ce044af09f141d30b2037d91d99c942e`. Квитанция `tich-source.json`
 в release связывает исходники и checksum бинарного XCFramework.
 
-Workflow `Tich Connect archive` запускается на Xcode 27 после merge.
-Он принимает уникальный номер сборки, создаёт unsigned iPhone archive и
-сохраняет исходный commit, версию Xcode и SHA256. Для TestFlight этот архив
-нужно подписать профилями трёх bundle ID, экспортировать и загрузить в Apple.
-Неподписанный архив не является готовым выпуском TestFlight.
+Workflow `Tich Connect archive` запускается на Xcode 27, импортирует
+distribution identity, создаёт подписанный archive и App Store IPA. Xcode
+автоматически обновляет профили через App Store Connect API. Проверка требует
+production APNs и App Group для приложения, NSE и ShareExtension.
+
+При ручном запуске `upload_to_testflight=true` workflow дополнительно
+загружает IPA через `altool` и сохраняет ответ Apple. Наличие IPA в артефакте
+само по себе не подтверждает обработку сборки или её доступность тестерам.
