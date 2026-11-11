@@ -42,9 +42,9 @@ jobs:
             build/DerivedData/CompilationCache.noindex
             ~/Library/Developer/Xcode/CompilationCache.noindex
             ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
-          key: tich-archive-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          key: tich-archive-v2-xcode27-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
-            tich-archive-${{ runner.os }}-
+            tich-archive-v2-xcode27-${{ runner.os }}-
 
       - name: Setup Xcode and project
         run: |
@@ -63,6 +63,7 @@ jobs:
             -archivePath build/TichConnect.xcarchive -derivedDataPath build/DerivedData \
             -skipPackagePluginValidation -jobs 4 ARCHS=arm64 \
             CURRENT_PROJECT_VERSION="$TICH_BUILD_NUMBER" CODE_SIGN_STYLE=Automatic \
+            COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_KEEP_CAS_DIRECTORY=YES \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$TICH_AUTH_KEY_PATH" \
             -authenticationKeyID "$TICH_APP_STORE_CONNECT_KEY_ID" \
@@ -143,6 +144,7 @@ jobs:
             --output-format json | tee build/upload.json
       - name: Save build caches
         if: ${{ always() }}
+        continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -150,7 +152,7 @@ jobs:
             build/DerivedData/CompilationCache.noindex
             ~/Library/Developer/Xcode/CompilationCache.noindex
             ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
-          key: tich-archive-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          key: tich-archive-v2-xcode27-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
 
       - name: Package release artifacts
         if: ${{ always() }}
