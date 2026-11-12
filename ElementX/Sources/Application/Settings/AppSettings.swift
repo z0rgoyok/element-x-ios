@@ -222,7 +222,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
         #endif
     }
     
-    private(set) var pushGatewayBaseURL: URL = "http://sygnal:5000"
+    private(set) var pushGatewayBaseURL: URL = "https://matrix.org"
     var pushGatewayNotifyEndpoint: URL {
         pushGatewayBaseURL.appending(path: "_matrix/push/v1/notify")
     }
@@ -411,7 +411,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
     var developerOptionsEnabled: Bool
     
     /// Runs calls through the native matrix-rust-rtc stack instead of the Element Call web view.
-    @UserPreference(defaultValue: true)
+    @UserPreference(defaultValue: false)
     var nativeCallEnabled: Bool
     
     @UserPreference(defaultValue: false)
