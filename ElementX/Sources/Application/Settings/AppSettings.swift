@@ -132,13 +132,13 @@ final nonisolated class AppSettings: @unchecked Sendable {
     /// A URL where users can go read more about the app.
     private(set) var websiteURL: URL = "https://connect.tich.app"
     /// A URL that contains the app's logo that may be used when showing content in a web view.
-    private(set) var logoURL: URL = "https://element.io/mobile-icon.png"
+    private(set) var logoURL: URL = "https://connect.tich.app/logo.png"
     /// A URL that contains that app's copyright notice.
-    private(set) var copyrightURL: URL = "https://element.io/copyright"
+    private(set) var copyrightURL: URL = "https://connect.tich.app/copyright"
     /// A URL that contains the app's Terms of use.
-    private(set) var acceptableUseURL: URL = "https://element.io/acceptable-use-policy-terms"
+    private(set) var acceptableUseURL: URL = "https://connect.tich.app/acceptable-use"
     /// A URL that contains the app's Privacy Policy.
-    private(set) var privacyURL: URL = "https://element.io/privacy"
+    private(set) var privacyURL: URL = "https://connect.tich.app/privacy"
     /// A URL where users can go read more about encryption in general.
     private(set) var encryptionURL: URL = "https://element.io/help#encryption"
     /// A URL where users can go read more about device verification..
@@ -191,7 +191,7 @@ final nonisolated class AppSettings: @unchecked Sendable {
     let oAuthStaticRegistrations: [URL: String] = ["https://id.thirdroom.io/realms/thirdroom": "elementx"]
     /// The redirect URL used for OAuth. For the normal case we don't actually need the bundle ID as the web authentication session handles the redirect internally.
     /// However in the case where MAS sends the user to an external app, we need to make sure that the system will open the correct variant of the app (e.g. Nightly).
-    private(set) nonisolated(unsafe) var oAuthRedirectURL: URL! = URL(string: "https://element.io/oauth/ios/\(InfoPlistReader.main.bundleIdentifier)")
+    private(set) nonisolated(unsafe) var oAuthRedirectURL: URL! = URL(string: "https://connect.tich.app/oauth/ios/\(InfoPlistReader.main.bundleIdentifier)")
     /// A path that is appended to `websiteURL` to form the OAuth `clientURI`. MAS uses `clientURI` as the identifier for a specific app, allowing us to
     /// distinguish the various clients we have for Android, iOS and Web from each other.
     /// Intentionally a distinct property so it can be easily overridden without having to manipulate the website URL.
