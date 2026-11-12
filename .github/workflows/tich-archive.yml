@@ -121,8 +121,8 @@ jobs:
               assert environment == expected[identifier][0], identifier
           receipt = {'app_sha': os.environ['GITHUB_SHA'], 'build': os.environ['TICH_BUILD_NUMBER'],
                      'state': 'signed and exported; TestFlight upload separate',
-                     'sdk_package': '26.10.23',
-                     'sdk_source': '27a0a4e0443ca3a1a5ded1ebb6bfe7ddc21752a4',
+                     'sdk_package': '26.10.20',
+                     'sdk_source': 'element-hq/matrix-rust-components-swift@26.10.20',
                      'xcode': subprocess.check_output(['xcodebuild', '-version'], text=True).strip()}
           pathlib.Path('build/source.json').write_text(json.dumps(receipt, indent=2) + '\n')
           PY
