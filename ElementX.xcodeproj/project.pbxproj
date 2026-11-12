@@ -11174,7 +11174,7 @@
 			repositoryURL = "https://github.com/z0rgoyok/matrix-rust-components-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 26.10.22;
+				version = 26.10.23;
 			};
 		};
 		8213398B60F9B660D9216ADF /* XCRemoteSwiftPackageReference "element-call-swift" */ = {
