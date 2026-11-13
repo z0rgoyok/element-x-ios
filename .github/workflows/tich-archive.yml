@@ -121,6 +121,8 @@ jobs:
               assert entitlements.get('com.apple.security.application-groups') == [expected[identifier][1]], identifier
               environment = entitlements.get('aps-environment')
               assert environment == expected[identifier][0], identifier
+              if identifier in ('app.tich.connect', 'app.tich.connect.nse'):
+                  assert entitlements.get('com.apple.developer.usernotifications.time-sensitive') is True, identifier
           receipt = {'app_sha': os.environ['GITHUB_SHA'], 'build': os.environ['TICH_BUILD_NUMBER'],
                      'state': 'signed and exported; TestFlight upload separate',
                      'sdk_package': '26.10.20',
