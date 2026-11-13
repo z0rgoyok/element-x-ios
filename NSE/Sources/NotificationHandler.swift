@@ -11,6 +11,14 @@ import MatrixRustSDK
 import Synchronization
 import UserNotifications
 
+private enum NotificationFilteringEntitlement {
+    #if TICH_HAS_NOTIFICATION_FILTERING_ENTITLEMENT
+    static let isGranted = true
+    #else
+    static let isGranted = false
+    #endif
+}
+
 nonisolated class NotificationHandler {
     private let userSession: NSEUserSession
     private let contentHandler: (UNNotificationContent) -> Void
@@ -206,6 +214,10 @@ nonisolated class NotificationHandler {
             return .shouldDisplay
         }
         
+        guard NotificationFilteringEntitlement.isGranted else {
+            MXLog.info("Notification filtering entitlement pending, handling ringing call as push notification")
+            return .shouldDisplay
+        }
         // Check to see if a call is still ongoing
         if let room = userSession.roomForIdentifier(roomID) { // Try to get call details from the room info
             if !room.hasActiveRoomCall() { // If I don't have an active call wait a bit and make sure
