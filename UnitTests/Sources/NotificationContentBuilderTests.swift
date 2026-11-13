@@ -55,7 +55,7 @@ nonisolated struct NotificationContentBuilderTests {
     }
     // swiftformat:enable blankLinesBetweenScopes,indent
     @Test
-    mutating func dmMessageNotification() async {
+    mutating func dmMessageNotification() async throws {
         let notificationItem = NotificationItemProxyMock(.init(roomID: "!test:matrix.org",
                                                                receiverID: "@bob:matrix.org",
                                                                senderDisplayName: "Alice",
@@ -64,6 +64,8 @@ nonisolated struct NotificationContentBuilderTests {
                                                                isRoomDirect: true,
                                                                isRoomPrivate: true,
                                                                isNoisy: true))
+        notificationItem.senderAvatarMediaSource = try MediaSourceProxy(url: #require(URL(string: "mxc://example.com/avatar")),
+                                                                        mimeType: nil)
         await notificationContentBuilder.process(notificationContent: &notificationContent,
                                                  notificationItem: notificationItem,
                                                  mediaProvider: mediaProvider)
@@ -80,6 +82,7 @@ nonisolated struct NotificationContentBuilderTests {
         // Remember we remove the @ due to an iOS bug
         #expect(notificationContent.threadIdentifier == "bob:matrix.org!test:matrix.org")
         #expect(notificationContent.attachments == [])
+        #expect(mediaProvider.loadThumbnailForSourceSourceSizeCallsCount == 0)
     }
     
     @Test

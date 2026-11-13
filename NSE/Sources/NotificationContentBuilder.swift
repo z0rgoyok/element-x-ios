@@ -72,7 +72,8 @@ nonisolated struct NotificationContentBuilder {
                 default:
                     await processAsMessage(notificationContent: &notificationContent,
                                            notificationItem: notificationItem,
-                                           mediaProvider: mediaProvider)
+                                           mediaProvider: mediaProvider,
+                                           fastDelivery: notificationItem.isDM)
                     
                     switch messageContent {
                     case .roomMessage(let messageType, _):
@@ -156,7 +157,8 @@ nonisolated struct NotificationContentBuilder {
     
     private func processAsMessage(notificationContent: inout UNMutableNotificationContent,
                                   notificationItem: NotificationItemProxyProtocol,
-                                  mediaProvider: MediaProviderProtocol) async {
+                                  mediaProvider: MediaProviderProtocol,
+                                  fastDelivery: Bool = false) async {
         notificationContent.title = notificationItem.senderDisplayName ?? notificationItem.roomDisplayName
         if notificationContent.title != notificationItem.roomDisplayName {
             notificationContent.subtitle = notificationItem.roomDisplayName
@@ -176,6 +178,8 @@ nonisolated struct NotificationContentBuilder {
                                       senderAvatarDisplayName: senderAvatarDisplayName,
                                       senderDisplayName: senderDisplayName,
                                       icon: icon(for: notificationItem),
+                                      forcePlaceholder: fastDelivery,
+                                      donateInteraction: !fastDelivery,
                                       mediaProvider: mediaProvider)
     }
     
@@ -279,6 +283,7 @@ nonisolated struct NotificationContentBuilder {
                                          senderDisplayName: String,
                                          icon: NotificationIcon,
                                          forcePlaceholder: Bool = false,
+                                         donateInteraction: Bool = true,
                                          mediaProvider: MediaProviderProtocol) async {
         var fetchedImage: INImage?
         let image: INImage
@@ -339,7 +344,7 @@ nonisolated struct NotificationContentBuilder {
         interaction.direction = .incoming
         
         // Donate the interaction before updating notification content.
-        if !ProcessInfo.isRunningTests {
+        if !ProcessInfo.isRunningTests, donateInteraction {
             try? await interaction.donate()
         }
         
