@@ -50,6 +50,9 @@ nonisolated struct NotificationContentBuilder {
         
         MXLog.info("isNoisy: \(notificationItem.isNoisy)")
         notificationContent.sound = notificationItem.isNoisy ? userSession.userSettings.account.notificationSound : nil
+        if notificationItem.isDM {
+            notificationContent.interruptionLevel = .timeSensitive
+        }
         
         switch notificationItem.event {
         case .none:
@@ -75,7 +78,14 @@ nonisolated struct NotificationContentBuilder {
                     notificationContent.body = L10n.commonPollSummary(question)
                 case .callInvite:
                     notificationContent.body = L10n.commonUnsupportedCall
-                case .rtcNotification:
+                case .rtcNotification(let notificationType, _, _):
+                    // Before the CallKit entitlement is available, a ringing call is delivered as
+                    // a regular alert. Matrix marks RTC notifications as quiet, but a fallback
+                    // for an incoming call must still be audible so it is not missed.
+                    if notificationType == .ring {
+                        notificationContent.sound = userSession.userSettings.account.notificationSound
+                        notificationContent.interruptionLevel = .timeSensitive
+                    }
                     notificationContent.body = L10n.notificationIncomingCall
                 default:
                     processEmpty(&notificationContent)

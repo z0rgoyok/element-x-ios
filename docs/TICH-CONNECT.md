@@ -42,6 +42,13 @@ Notification Filtering по отдельному запросу; до одобр
 входящего звонка. `ci_scripts/verify-tich-push.py` не допускает сборку, если
 entitlement и compile-time режим расходятся.
 
+Личные сообщения и запасной alert входящего звонка помечаются как time-sensitive:
+они сразу видимы и обходят Scheduled Summary и Focus. Групповые и служебные
+уведомления остаются обычными, чтобы не превращать каждый push в срочный.
+Приложение, NSE и оба App ID должны сохранять entitlement
+`com.apple.developer.usernotifications.time-sensitive` во всех distribution
+профилях. Без него iOS понижает alert до обычного и может отложить показ.
+
 Состояния выпуска фиксируются отдельно: исходники, тесты, архив, загрузка,
 обработка Apple и доступность сборки в TestFlight.
 
