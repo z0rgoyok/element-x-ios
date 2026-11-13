@@ -11,7 +11,7 @@ import MatrixRustSDK
 import Synchronization
 import UserNotifications
 
-private enum NotificationFilteringEntitlement {
+private nonisolated enum NotificationFilteringEntitlement {
     #if TICH_HAS_NOTIFICATION_FILTERING_ENTITLEMENT
     static let isGranted = true
     #else
