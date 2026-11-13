@@ -64,31 +64,29 @@ nonisolated struct NotificationContentBuilder {
         case .timeline(let event):
             switch try? event.content() {
             case .messageLike(let messageContent):
-                await processAsMessage(notificationContent: &notificationContent,
-                                       notificationItem: notificationItem,
-                                       mediaProvider: mediaProvider)
-                
                 switch messageContent {
-                case .roomMessage(let messageType, _):
-                    await processRoomMessage(notificationContent: &notificationContent,
-                                             notificationItem: notificationItem,
-                                             messageType: messageType,
-                                             mediaProvider: mediaProvider)
-                case .poll(let question):
-                    notificationContent.body = L10n.commonPollSummary(question)
-                case .callInvite:
-                    notificationContent.body = L10n.commonUnsupportedCall
                 case .rtcNotification(let notificationType, _, _):
-                    // Before the CallKit entitlement is available, a ringing call is delivered as
-                    // a regular alert. Matrix marks RTC notifications as quiet, but a fallback
-                    // for an incoming call must still be audible so it is not missed.
-                    if notificationType == .ring {
-                        notificationContent.sound = userSession.userSettings.account.notificationSound
-                        notificationContent.interruptionLevel = .timeSensitive
-                    }
-                    notificationContent.body = L10n.notificationIncomingCall
+                    processRTCNotification(notificationContent: &notificationContent,
+                                           notificationItem: notificationItem,
+                                           notificationType: notificationType)
                 default:
-                    processEmpty(&notificationContent)
+                    await processAsMessage(notificationContent: &notificationContent,
+                                           notificationItem: notificationItem,
+                                           mediaProvider: mediaProvider)
+                    
+                    switch messageContent {
+                    case .roomMessage(let messageType, _):
+                        await processRoomMessage(notificationContent: &notificationContent,
+                                                 notificationItem: notificationItem,
+                                                 messageType: messageType,
+                                                 mediaProvider: mediaProvider)
+                    case .poll(let question):
+                        notificationContent.body = L10n.commonPollSummary(question)
+                    case .callInvite:
+                        notificationContent.body = L10n.commonUnsupportedCall
+                    default:
+                        processEmpty(&notificationContent)
+                    }
                 }
             case .state(let stateContent):
                 switch stateContent {
@@ -135,6 +133,25 @@ nonisolated struct NotificationContentBuilder {
                                       icon: icon(for: notificationItem),
                                       forcePlaceholder: userSession.inviteAvatarsVisibility == .off,
                                       mediaProvider: mediaProvider)
+    }
+    
+    private func processRTCNotification(notificationContent: inout UNMutableNotificationContent,
+                                        notificationItem: NotificationItemProxyProtocol,
+                                        notificationType: RtcNotificationType) {
+        let title = notificationItem.senderDisplayName ?? notificationItem.roomDisplayName
+        notificationContent.title = title
+        if title != notificationItem.roomDisplayName {
+            notificationContent.subtitle = notificationItem.roomDisplayName
+        }
+        notificationContent.categoryIdentifier = NotificationConstants.Category.message
+        
+        if notificationType == .ring {
+            // Before CallKit filtering is available, the fallback alert must be audible and
+            // time-sensitive. Avoid avatar and communication-intent work so ring delivery stays fast.
+            notificationContent.sound = userSession.userSettings.account.notificationSound
+            notificationContent.interruptionLevel = .timeSensitive
+        }
+        notificationContent.body = L10n.notificationIncomingCall
     }
     
     private func processAsMessage(notificationContent: inout UNMutableNotificationContent,
