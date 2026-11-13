@@ -47,6 +47,8 @@ nonisolated struct NotificationContentBuilderTests {
         await notificationContentBuilder.process(notificationContent: &notificationContent,
                                                  notificationItem: notificationItem,
                                                  mediaProvider: mediaProvider)
+        let communicationContext = Dynamic(notificationContent, memberName: "communicationContext")
+        #expect(communicationContext.sender.asObject == nil)
         #expect(notificationContent.body == L10n.notificationIncomingCall)
         #expect(notificationContent.sound != nil)
         #expect(notificationContent.interruptionLevel == .timeSensitive)
