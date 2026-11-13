@@ -35,8 +35,12 @@ Matrix передаются пакетами GET через Яндекс CDN, с
 Push требует отдельного APNs шлюза для нашего Bundle ID. Расширение NSE
 использует ту же сборку SDK и общую защищённую сессию приложения. Apple выдаёт
 Notification Filtering по отдельному запросу; до одобрения NSE работает без
-этого restricted entitlement, а доступность уведомлений проверяется отдельно
-от Matrix CDN.
+этого restricted entitlement. В этом режиме зашифрованное RTC-уведомление
+показывается как обычный push `Incoming call`, а не отправляется в CallKit.
+После одобрения entitlement и флага
+`TICH_HAS_NOTIFICATION_FILTERING_ENTITLEMENT` включается системный экран
+входящего звонка. `ci_scripts/verify-tich-push.py` не допускает сборку, если
+entitlement и compile-time режим расходятся.
 
 Состояния выпуска фиксируются отдельно: исходники, тесты, архив, загрузка,
 обработка Apple и доступность сборки в TestFlight.
