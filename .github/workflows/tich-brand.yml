@@ -1,0 +1,48 @@
+name: Tich Connect identity
+on:
+  pull_request:
+    branches: [tich/main]
+  push:
+    branches: [tich/main]
+permissions:
+  contents: read
+jobs:
+  identity:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Verify app and extension identity
+        run: |
+          python3 - <<'PY'
+          import pathlib, plistlib, struct
+          root = pathlib.Path('.')
+          config = (root / 'app.yml').read_text()
+          for setting in ['APP_DISPLAY_NAME: Tich Connect', 'BASE_BUNDLE_IDENTIFIER: app.tich.connect',
+                          'APP_GROUP_IDENTIFIER: group.app.tich.connect']:
+              assert setting in config, setting
+          for target in ['ElementX', 'NSE', 'ShareExtension']:
+              data = plistlib.loads((root / target / 'SupportingFiles' / (target + '.entitlements')).read_bytes())
+              assert data['com.apple.security.application-groups'] == ['$(APP_GROUP_IDENTIFIER)']
+          icon = (root / 'ElementX/Resources/AppIcon.icon/Assets/AppIcon.png').read_bytes()
+          assert icon[:8] == b'\x89PNG\r\n\x1a\n'
+          assert struct.unpack('>II', icon[16:24]) == (1024, 1024)
+          import hashlib
+          assert hashlib.sha256(icon).hexdigest() == '089f35d169ee4a19833816f6d33c0ea7dbf18c633851acaf0a16edda13f1aafe'
+          PY
+      - name: Verify public route reaches Yandex CDN
+        run: |
+          curl --fail --silent --show-error --dump-header headers \
+            --output versions.json \
+            https://connect.tich.app/_matrix/client/versions
+          grep -iE '^cache-host: yccdn-' headers
+          python3 - <<'PY'
+          import json, urllib.request
+          with urllib.request.urlopen('https://connect.tich.app/.well-known/matrix/client', timeout=20) as response:
+              data = json.load(response)
+          assert data['m.homeserver']['base_url'] == 'https://connect.tich.app'
+          assert data['org.matrix.msc4143.rtc_foci'][0]['livekit_service_url'] == 'https://calls.tich.app/livekit/jwt'
+          with open('versions.json', encoding='utf-8') as source:
+              assert 'versions' in json.load(source)
+          PY

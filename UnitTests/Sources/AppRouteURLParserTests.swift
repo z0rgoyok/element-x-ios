@@ -72,7 +72,7 @@ struct AppRouteURLParserTests {
     @Test
     func webRoomIDURL() throws {
         let id = "!abcdefghijklmnopqrstuvwxyz1234567890:matrix.org"
-        let url = try #require(URL(string: "https://app.element.io/#/room/\(id)"))
+        let url = try #require(URL(string: "https://connect.tich.app/#/room/\(id)"))
         
         let route = appRouteURLParser.route(from: url)
         
@@ -82,7 +82,7 @@ struct AppRouteURLParserTests {
     @Test
     func webUserIDURL() throws {
         let id = "@alice:matrix.org"
-        let url = try #require(URL(string: "https://develop.element.io/#/user/\(id)"))
+        let url = try #require(URL(string: "https://connect.tich.app/#/user/\(id)"))
         
         let route = appRouteURLParser.route(from: url)
         

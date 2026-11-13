@@ -39,3 +39,8 @@ Components/Secrets/vendor/*
 
 # Local SDK development override
 matrix-rust-components-swift
+
+# Local release receipts and diagnostics. Credentials belong to Deploy OS.
+.automate/
+*.p8
+*.mobileprovision

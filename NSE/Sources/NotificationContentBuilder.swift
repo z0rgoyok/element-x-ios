@@ -50,6 +50,9 @@ nonisolated struct NotificationContentBuilder {
         
         MXLog.info("isNoisy: \(notificationItem.isNoisy)")
         notificationContent.sound = notificationItem.isNoisy ? userSession.userSettings.account.notificationSound : nil
+        if notificationItem.isDM {
+            notificationContent.interruptionLevel = .timeSensitive
+        }
         
         switch notificationItem.event {
         case .none:
@@ -61,24 +64,30 @@ nonisolated struct NotificationContentBuilder {
         case .timeline(let event):
             switch try? event.content() {
             case .messageLike(let messageContent):
-                await processAsMessage(notificationContent: &notificationContent,
-                                       notificationItem: notificationItem,
-                                       mediaProvider: mediaProvider)
-                
                 switch messageContent {
-                case .roomMessage(let messageType, _):
-                    await processRoomMessage(notificationContent: &notificationContent,
-                                             notificationItem: notificationItem,
-                                             messageType: messageType,
-                                             mediaProvider: mediaProvider)
-                case .poll(let question):
-                    notificationContent.body = L10n.commonPollSummary(question)
-                case .callInvite:
-                    notificationContent.body = L10n.commonUnsupportedCall
-                case .rtcNotification:
-                    notificationContent.body = L10n.notificationIncomingCall
+                case .rtcNotification(let notificationType, _, _):
+                    processRTCNotification(notificationContent: &notificationContent,
+                                           notificationItem: notificationItem,
+                                           notificationType: notificationType)
                 default:
-                    processEmpty(&notificationContent)
+                    await processAsMessage(notificationContent: &notificationContent,
+                                           notificationItem: notificationItem,
+                                           mediaProvider: mediaProvider,
+                                           fastDelivery: notificationItem.isDM)
+                    
+                    switch messageContent {
+                    case .roomMessage(let messageType, _):
+                        await processRoomMessage(notificationContent: &notificationContent,
+                                                 notificationItem: notificationItem,
+                                                 messageType: messageType,
+                                                 mediaProvider: mediaProvider)
+                    case .poll(let question):
+                        notificationContent.body = L10n.commonPollSummary(question)
+                    case .callInvite:
+                        notificationContent.body = L10n.commonUnsupportedCall
+                    default:
+                        processEmpty(&notificationContent)
+                    }
                 }
             case .state(let stateContent):
                 switch stateContent {
@@ -127,9 +136,29 @@ nonisolated struct NotificationContentBuilder {
                                       mediaProvider: mediaProvider)
     }
     
+    private func processRTCNotification(notificationContent: inout UNMutableNotificationContent,
+                                        notificationItem: NotificationItemProxyProtocol,
+                                        notificationType: RtcNotificationType) {
+        let title = notificationItem.senderDisplayName ?? notificationItem.roomDisplayName
+        notificationContent.title = title
+        if title != notificationItem.roomDisplayName {
+            notificationContent.subtitle = notificationItem.roomDisplayName
+        }
+        notificationContent.categoryIdentifier = NotificationConstants.Category.message
+        
+        if notificationType == .ring {
+            // Before CallKit filtering is available, the fallback alert must be audible and
+            // time-sensitive. Avoid avatar and communication-intent work so ring delivery stays fast.
+            notificationContent.sound = userSession.userSettings.account.notificationSound
+            notificationContent.interruptionLevel = .timeSensitive
+        }
+        notificationContent.body = L10n.notificationIncomingCall
+    }
+    
     private func processAsMessage(notificationContent: inout UNMutableNotificationContent,
                                   notificationItem: NotificationItemProxyProtocol,
-                                  mediaProvider: MediaProviderProtocol) async {
+                                  mediaProvider: MediaProviderProtocol,
+                                  fastDelivery: Bool = false) async {
         notificationContent.title = notificationItem.senderDisplayName ?? notificationItem.roomDisplayName
         if notificationContent.title != notificationItem.roomDisplayName {
             notificationContent.subtitle = notificationItem.roomDisplayName
@@ -149,6 +178,8 @@ nonisolated struct NotificationContentBuilder {
                                       senderAvatarDisplayName: senderAvatarDisplayName,
                                       senderDisplayName: senderDisplayName,
                                       icon: icon(for: notificationItem),
+                                      forcePlaceholder: fastDelivery,
+                                      donateInteraction: !fastDelivery,
                                       mediaProvider: mediaProvider)
     }
     
@@ -252,6 +283,7 @@ nonisolated struct NotificationContentBuilder {
                                          senderDisplayName: String,
                                          icon: NotificationIcon,
                                          forcePlaceholder: Bool = false,
+                                         donateInteraction: Bool = true,
                                          mediaProvider: MediaProviderProtocol) async {
         var fetchedImage: INImage?
         let image: INImage
@@ -312,7 +344,7 @@ nonisolated struct NotificationContentBuilder {
         interaction.direction = .incoming
         
         // Donate the interaction before updating notification content.
-        if !ProcessInfo.isRunningTests {
+        if !ProcessInfo.isRunningTests, donateInteraction {
             try? await interaction.donate()
         }
         

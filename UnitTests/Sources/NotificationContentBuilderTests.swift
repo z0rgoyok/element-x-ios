@@ -26,8 +26,36 @@ nonisolated struct NotificationContentBuilderTests {
                                                                       userSession: NSEUserSessionMock(.init()))
     }
     
+    // swiftformat:disable blankLinesBetweenScopes,indent
     @Test
-    mutating func dmMessageNotification() async {
+    mutating func ringingCallNotificationFallsBackToAudibleAlert() async {
+        let event = TimelineEventSDKMock()
+        event.eventIdReturnValue = "call-notification"
+        event.timestampReturnValue = 0
+        event.contentReturnValue = .messageLike(.rtcNotification(notificationType: .ring,
+                                                                 expirationTs: 60000,
+                                                                 callIntent: .video))
+        let notificationItem = NotificationItemProxyMock(.init(event: .timeline(event: event),
+                                                               roomID: "!call:matrix.org",
+                                                               receiverID: "@bob:matrix.org",
+                                                               senderDisplayName: "Alice",
+                                                               roomDisplayName: "Alice",
+                                                               roomJoinedMembers: 2,
+                                                               isRoomDirect: true,
+                                                               isRoomPrivate: true,
+                                                               isNoisy: false))
+        await notificationContentBuilder.process(notificationContent: &notificationContent,
+                                                 notificationItem: notificationItem,
+                                                 mediaProvider: mediaProvider)
+        let communicationContext = Dynamic(notificationContent, memberName: "communicationContext")
+        #expect(communicationContext.sender.asObject == nil)
+        #expect(notificationContent.body == L10n.notificationIncomingCall)
+        #expect(notificationContent.sound != nil)
+        #expect(notificationContent.interruptionLevel == .timeSensitive)
+    }
+    // swiftformat:enable blankLinesBetweenScopes,indent
+    @Test
+    mutating func dmMessageNotification() async throws {
         let notificationItem = NotificationItemProxyMock(.init(roomID: "!test:matrix.org",
                                                                receiverID: "@bob:matrix.org",
                                                                senderDisplayName: "Alice",
@@ -36,6 +64,8 @@ nonisolated struct NotificationContentBuilderTests {
                                                                isRoomDirect: true,
                                                                isRoomPrivate: true,
                                                                isNoisy: true))
+        notificationItem.senderAvatarMediaSource = try MediaSourceProxy(url: #require(URL(string: "mxc://example.com/avatar")),
+                                                                        mimeType: nil)
         await notificationContentBuilder.process(notificationContent: &notificationContent,
                                                  notificationItem: notificationItem,
                                                  mediaProvider: mediaProvider)
@@ -48,9 +78,11 @@ nonisolated struct NotificationContentBuilderTests {
         #expect(notificationContent.categoryIdentifier == NotificationConstants.Category.message)
         #expect(notificationContent.threadRootEventID == nil)
         #expect(notificationContent.sound != nil)
+        #expect(notificationContent.interruptionLevel == .timeSensitive)
         // Remember we remove the @ due to an iOS bug
         #expect(notificationContent.threadIdentifier == "bob:matrix.org!test:matrix.org")
         #expect(notificationContent.attachments == [])
+        #expect(mediaProvider.loadThumbnailForSourceSourceSizeCallsCount == 0)
     }
     
     @Test
@@ -162,6 +194,7 @@ nonisolated struct NotificationContentBuilderTests {
         #expect(notificationContent.categoryIdentifier == NotificationConstants.Category.message)
         #expect(notificationContent.threadRootEventID == nil)
         #expect(notificationContent.sound == nil)
+        #expect(notificationContent.interruptionLevel == .active)
         // Remember we remove the @ due to an iOS bug
         #expect(notificationContent.threadIdentifier == "bob:matrix.org!testroom:matrix.org")
         #expect(notificationContent.attachments == [])

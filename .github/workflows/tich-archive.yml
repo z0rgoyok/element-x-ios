@@ -1,0 +1,183 @@
+name: Tich Connect archive
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Unique TestFlight build number
+        required: true
+        default: '1'
+      upload_to_testflight:
+        description: Upload the signed IPA to TestFlight
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: xcode-27
+    timeout-minutes: 90
+    env:
+      TICH_BUILD_NUMBER: ${{ inputs.build_number || '1' }}
+      TICH_APP_STORE_CONNECT_KEY_ID: ${{ secrets.TICH_APP_STORE_CONNECT_KEY_ID }}
+      TICH_APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.TICH_APP_STORE_CONNECT_ISSUER_ID }}
+      TICH_APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.TICH_APP_STORE_CONNECT_PRIVATE_KEY }}
+      TICH_DISTRIBUTION_P12_BASE64: ${{ secrets.TICH_DISTRIBUTION_P12_BASE64 }}
+      TICH_DISTRIBUTION_P12_PASSWORD: ${{ secrets.TICH_DISTRIBUTION_P12_PASSWORD }}
+      TICH_PROFILE_MAIN_BASE64: ${{ secrets.TICH_PROFILE_MAIN_BASE64 }}
+      TICH_PROFILE_NSE_BASE64: ${{ secrets.TICH_PROFILE_NSE_BASE64 }}
+      TICH_PROFILE_SHARE_BASE64: ${{ secrets.TICH_PROFILE_SHARE_BASE64 }}
+      GIT_LFS_SKIP_SMUDGE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Verify Tich push destination
+        run: python3 ci_scripts/verify-tich-push.py
+      - name: Restore build caches
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            build/DerivedData/SourcePackages
+            build/DerivedData/CompilationCache.noindex
+            ~/Library/Developer/Xcode/CompilationCache.noindex
+            ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+          key: tich-archive-v2-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            tich-archive-v2-${{ runner.os }}-
+
+      - name: Setup Xcode and project
+        run: |
+          case "$TICH_BUILD_NUMBER" in ''|*[!0-9]*) exit 1 ;; esac
+          source ci_scripts/ci_common.sh
+          source ci_scripts/tich-signing.sh
+          setup_github_actions_environment
+          setup_tich_signing
+          xcodegen
+      - name: Archive and export for App Store
+        run: |
+          xcodebuild -project ElementX.xcodeproj -scheme ElementX \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/TichConnect.xcarchive -derivedDataPath build/DerivedData \
+            -skipPackagePluginValidation -jobs 4 ARCHS=arm64 \
+            CURRENT_PROJECT_VERSION="$TICH_BUILD_NUMBER" CODE_SIGN_STYLE=Manual \
+            COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_KEEP_CAS_DIRECTORY=YES \
+            archive
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key><string>export</string>
+            <key>method</key><string>app-store-connect</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>teamID</key><string>N6M79K762Y</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>app.tich.connect</key><string>Tich Connect AppStore</string>
+              <key>app.tich.connect.nse</key><string>Tich Connect NSE AppStore</string>
+              <key>app.tich.connect.shareextension</key><string>Tich Connect Share AppStore</string>
+            </dict>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/TichConnect.xcarchive \
+            -exportPath build/export -exportOptionsPlist build/ExportOptions.plist
+      - name: Verify signed application
+        run: |
+          set -euo pipefail
+          IPA_PATH="$(find build/export -maxdepth 2 -type f -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
+          VERIFY_DIR="$(mktemp -d "$RUNNER_TEMP/tich-ipa.XXXXXX")"
+          trap 'rm -rf "$VERIFY_DIR"' EXIT
+          ditto -x -k "$IPA_PATH" "$VERIFY_DIR"
+          APP_PATH="$(find "$VERIFY_DIR/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          for target in "$APP_PATH" "$APP_PATH/PlugIns/NSE.appex" "$APP_PATH/PlugIns/ShareExtension.appex"; do
+            test -d "$target"
+            codesign -d --verbose=2 "$target" 2>&1 | grep -F 'Authority=Apple Distribution'
+            test -f "$target/embedded.mobileprovision"
+            security cms -D -i "$target/embedded.mobileprovision" > "${target}.provision.plist"
+          done
+          python3 - "$APP_PATH" <<'PY'
+          import json, os, pathlib, plistlib, subprocess, sys
+          app = pathlib.Path(sys.argv[1])
+          expected = {
+              'app.tich.connect': ('production', 'group.app.tich.connect'),
+              'app.tich.connect.nse': (None, 'group.app.tich.connect'),
+              'app.tich.connect.shareextension': (None, 'group.app.tich.connect')}
+          targets = [app, app / 'PlugIns/NSE.appex', app / 'PlugIns/ShareExtension.appex']
+          for target in targets:
+              info = plistlib.loads((target / 'Info.plist').read_bytes())
+              identifier = info['CFBundleIdentifier']
+              profile = plistlib.loads((target.parent / (target.name + '.provision.plist')).read_bytes())
+              entitlements = profile['Entitlements']
+              application_id = 'N6M79K762Y.' + identifier
+              assert entitlements['application-identifier'] == application_id, identifier
+              assert entitlements.get('com.apple.security.application-groups') == [expected[identifier][1]], identifier
+              environment = entitlements.get('aps-environment')
+              assert environment == expected[identifier][0], identifier
+              if identifier in ('app.tich.connect', 'app.tich.connect.nse'):
+                  assert entitlements.get('com.apple.developer.usernotifications.time-sensitive') is True, identifier
+          receipt = {'app_sha': os.environ['GITHUB_SHA'], 'build': os.environ['TICH_BUILD_NUMBER'],
+                     'state': 'signed and exported; TestFlight upload separate',
+                     'sdk_package': '26.10.20',
+                     'sdk_source': 'element-hq/matrix-rust-components-swift@26.10.20',
+                     'xcode': subprocess.check_output(['xcodebuild', '-version'], text=True).strip()}
+          pathlib.Path('build/source.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+      - name: Upload to TestFlight
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.upload_to_testflight }}
+        run: |
+          set -o pipefail
+          IPA_PATH="$(find build/export -type f -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
+          xcrun altool --upload-app --type ios --file "$IPA_PATH" \
+            --apiKey "$TICH_APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$TICH_APP_STORE_CONNECT_ISSUER_ID" \
+            --output-format json | tee build/upload.json
+      - name: Save build caches
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            build/DerivedData/SourcePackages
+            build/DerivedData/CompilationCache.noindex
+            ~/Library/Developer/Xcode/CompilationCache.noindex
+            ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+          key: tich-archive-v2-${{ runner.os }}-${{ hashFiles('project.yml', 'app.yml', 'Package.resolved', 'ElementX.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+
+      - name: Package release artifacts
+        if: ${{ always() }}
+        run: |
+          source ci_scripts/tich-signing.sh
+          if test -d build/export; then
+            ditto -c -k --sequesterRsrc --keepParent build/export build/TichConnect.ipa.zip
+          fi
+          if test -d build/TichConnect.xcarchive; then
+            ditto -c -k --keepParent build/TichConnect.xcarchive build/TichConnect.xcarchive.zip
+          fi
+          if test -f build/TichConnect.xcarchive.zip; then
+            shasum -a 256 build/TichConnect.xcarchive.zip >> build/release.sha256
+          fi
+          if test -f build/TichConnect.ipa.zip; then
+            shasum -a 256 build/TichConnect.ipa.zip >> build/release.sha256
+          fi
+          cleanup_tich_signing
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() }}
+        with:
+          name: tich-connect-signed-release
+          path: |
+            build/TichConnect.xcarchive.zip
+            build/TichConnect.ipa.zip
+            build/source.json
+            build/upload.json
+            build/release.sha256
+          retention-days: 7
+          if-no-files-found: warn

@@ -27,6 +27,7 @@ final class AuthenticationStartScreenViewModelTests {
     
     init() {
         appSettings = AppSettings.volatile()
+        appSettings.override(allowOtherAccountProviders: true)
     }
     
     @Test

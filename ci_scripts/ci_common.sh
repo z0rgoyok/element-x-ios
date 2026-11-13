@@ -15,8 +15,25 @@ setup_github_actions_environment() {
     unset HOMEBREW_NO_INSTALL_FROM_API
     export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
     
-    brew update && brew install xcodegen swiftlint swiftformat git-lfs pkl
+    brew update && brew install xcodegen swiftlint git-lfs pkl
+    install_pinned_swiftformat
 }
+
+install_pinned_swiftformat() {
+    SWIFTFORMAT_VERSION="0.64.0"
+    SWIFTFORMAT_SHA256="95ea62625d0b898a7af870293311ae6f09e4a3147ecd900593687e4b9ab2fd98"
+    SWIFTFORMAT_DIR="$(mktemp -d)"
+    curl --fail --silent --show-error --location \
+        "https://github.com/nicklockwood/SwiftFormat/releases/download/${SWIFTFORMAT_VERSION}/swiftformat.zip" \
+        --output "${SWIFTFORMAT_DIR}/swiftformat.zip"
+    printf '%s  %s\n' "$SWIFTFORMAT_SHA256" "${SWIFTFORMAT_DIR}/swiftformat.zip" | shasum -a 256 -c -
+    unzip -q "${SWIFTFORMAT_DIR}/swiftformat.zip" -d "$SWIFTFORMAT_DIR"
+    sudo install -m 0755 "${SWIFTFORMAT_DIR}/swiftformat" /opt/homebrew/bin/swiftformat
+    /opt/homebrew/bin/swiftformat --version | grep -Fx "$SWIFTFORMAT_VERSION"
+    rm "${SWIFTFORMAT_DIR}/swiftformat" "${SWIFTFORMAT_DIR}/swiftformat.zip"
+    rmdir "$SWIFTFORMAT_DIR"
+}
+
 
 setup_github_actions_translations_environment() {
     xcode_select_for_github_actions

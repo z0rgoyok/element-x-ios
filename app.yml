@@ -1,10 +1,10 @@
 settings:
-  APP_DISPLAY_NAME: Element X
-  PRODUCTION_APP_NAME: Element
-  APP_GROUP_IDENTIFIER: group.io.element
-  BASE_BUNDLE_IDENTIFIER: io.element.elementx
+  APP_DISPLAY_NAME: Tich Connect
+  PRODUCTION_APP_NAME: Tich Connect
+  APP_GROUP_IDENTIFIER: group.app.tich.connect
+  BASE_BUNDLE_IDENTIFIER: app.tich.connect
   ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "colors/accent-color"
-  DEVELOPMENT_TEAM: 7J4U792NQT
+  DEVELOPMENT_TEAM: N6M79K762Y
   IS_NIGHTLY_BUILD: false
 
   # Optional configuration to load accounts from Element Classic.
