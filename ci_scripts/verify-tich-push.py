@@ -7,7 +7,6 @@ settings = (root / "ElementX/Sources/Application/Settings/AppSettings.swift").re
 match = re.search(r'var pushGatewayBaseURL: URL = "([^"]+)"', settings)
 if not match or match[1] != "http://sygnal:5000":
     raise SystemExit("Tich push destination differs from the managed Sygnal gateway")
-
 entitlements = (root / "NSE/SupportingFiles/NSE.entitlements").read_text()
 target = (root / "NSE/SupportingFiles/target.yml").read_text()
 has_entitlement = "com.apple.developer.usernotifications.filtering" in entitlements
